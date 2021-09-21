@@ -1,57 +1,91 @@
+/**
+ * Cliente
+ * 1. Criar socket
+ * 2. Conectar com o servidor
+ * 3. Enviar/receber mensagens
+ * 4. Fechar conexão
+ */
+
+
+
+// Client side C/C++ program to demonstrate Socket programming
 #include <stdio.h>
-#include <stdlib.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
 #include <unistd.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h> 
 
-void error(const char *msg)
-{
-    perror(msg);
-    exit(0);
-}
+#define PORT 80
+#define BUFFER_SIZE 1024
+//#define IP_SERVER "10.0.98.1"
 
-int main(int argc, char *argv[])
-{
-    int sockfd, portno, n;
+
+int main(int argc, char const *argv[]) {
+
+    int sock = 0, valread;
     struct sockaddr_in serv_addr;
-    struct hostent *server;
+    char *hello = "Mensagem do CLIENTE";
+    char buffer[BUFFER_SIZE] = {0};
 
-    char buffer[256];
-    if (argc < 3) {
-       fprintf(stderr,"usage %s hostname port\n", argv[0]);
-       exit(0);
+    // 1. Criar socket
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    {
+        printf("\n Socket creation error \n");
+        return -1;
     }
-    portno = atoi(argv[2]);
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd < 0) 
-        error("ERROR opening socket");
-    server = gethostbyname(argv[1]);
-    if (server == NULL) {
-        fprintf(stderr,"ERROR, no such host\n");
-        exit(0);
-    }
-    bzero((char *) &serv_addr, sizeof(serv_addr));
+   
     serv_addr.sin_family = AF_INET;
-    bcopy((char *)server->h_addr, 
-         (char *)&serv_addr.sin_addr.s_addr,
-         server->h_length);
-    serv_addr.sin_port = htons(portno);
-    if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) 
-        error("ERROR connecting");
-    printf("Please enter the message: ");
-    bzero(buffer,256);
-    fgets(buffer,255,stdin);
-    n = write(sockfd,buffer,strlen(buffer));
-    if (n < 0) 
-         error("ERROR writing to socket");
-    bzero(buffer,256);
-    n = read(sockfd,buffer,255);
-    if (n < 0) 
-         error("ERROR reading from socket");
-    printf("%s\n",buffer);
-    close(sockfd);
+    serv_addr.sin_port = htons(PORT);
+       
+    if(inet_pton(AF_INET, argv[1], &serv_addr.sin_addr)<=0) 
+//    if(inet_pton(AF_INET, IP_SERVER, &serv_addr.sin_addr)<=0) 
+    {
+        printf("\nInvalid address/ Address not supported \n");
+        return -1;
+    }
+    
+    // 2. Conectar com o servidor
+    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+    {
+        printf("\nConnection Failed \n");
+        return -1;
+    }
+
+    // 3. Enviar e receber mensagens
+// Servidor pede o nome
+    valread = read(sock, buffer, 1024);
+    printf("Echo: %s", buffer);
+// Cliente envia o nome
+    char nome[100];
+    scanf("%s", nome);
+    send(sock , nome , strlen(nome) , 0 );
+
+// Servidor pede a idade
+    valread = read(sock, buffer, 1024);
+    printf("Echo: %s", buffer);
+// Cliente envia a idade
+    char idade[5];
+    scanf("%s", idade);
+    send(sock , idade , strlen(idade) , 0 );
+
+
+// Servidor pede a altura
+    valread = read(sock, buffer, 1024);
+    printf("Echo: %s", buffer);
+// Cliente envia a idade
+    char altura[8];
+    scanf("%s", altura);
+    send(sock , altura , strlen(altura) , 0 );
+
+
+/*
+    send(sock , hello , strlen(hello) , 0 );
+    printf("Client Message sent\n");
+    valread = read( sock , buffer, 1024);
+    printf("Mensagem recebida: %s\n",buffer );
+*/
+
+    // 4. Fechar conexão
+    close(sock);
     return 0;
 }
