@@ -31,7 +31,7 @@ public class Client {
         }
     }
     
-}package mpi;
+}package RMI;
 
 public class client {
     
